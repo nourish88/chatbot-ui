@@ -6,7 +6,6 @@ import {
   IconButton,
   Paper,
   Typography,
-  Container,
   Card,
   CardContent,
   Box,
@@ -19,15 +18,8 @@ import {
   Divider,
   List,
   ListItem,
-  ListItemText,
   Avatar,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
@@ -36,17 +28,15 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { ResizableBox } from "react-resizable";
 import "react-resizable/css/styles.css";
 
-// Custom PaperComponent for draggable dialog without findDOMNode
+// Custom PaperComponent for draggable dialog
 function DraggablePaperComponent(props) {
   const nodeRef = useRef(null);
   const [dragging, setDragging] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const offset = useRef({ x: 0, y: 0 });
 
-  // Only allow drag from the header (DialogTitle), not from the whole modal
   const handleMouseDown = (e) => {
-    // Only start drag if the target is the dialog title or its children
-    if (!e.target.closest('#draggable-dialog-title')) return;
+    if (!e.target.closest("#draggable-dialog-title")) return;
     const rect = nodeRef.current.getBoundingClientRect();
     offset.current = {
       x: e.clientX - rect.left,
@@ -56,7 +46,6 @@ function DraggablePaperComponent(props) {
     document.body.style.userSelect = "none";
   };
 
-  // Move handleMouseMove and handleMouseUp inside useEffect to avoid missing dependency warning
   useEffect(() => {
     function handleMouseMove(e) {
       if (!dragging) return;
@@ -96,101 +85,9 @@ function DraggablePaperComponent(props) {
   );
 }
 
-// Component to render data as table or regular text
-function DataRenderer({ data, type = "result" }) {
-  // Check if data is an array of objects
-  const isTableData = Array.isArray(data) && data.length > 0 && typeof data[0] === 'object';
-
-  if (!isTableData) {
-    return (
-      <Typography variant="body2" sx={{ mt: 1 }}>
-        {type === "result" ? "İşlem tamamlandı! Sonuç: " : ""}{JSON.stringify(data)}
-      </Typography>
-    );
-  }
-
-  // Get all unique keys from the objects to create table headers
-  const headers = [...new Set(data.flatMap(obj => Object.keys(obj)))];
-
-  return (
-    <Box sx={{ mt: 2 }}>
-      <Typography variant="body2" color="success.main" sx={{ mb: 1, fontWeight: 600 }}>
-        {type === "result" ? "İşlem tamamlandı! Sonuç:" : "Veri:"}
-      </Typography>
-      <TableContainer component={Paper} variant="outlined" sx={{
-        maxHeight: 320,
-        borderRadius: 0,
-        boxShadow: 4,
-        border: '2px solid #001a4d',
-        background: '#fff',
-        p: 0,
-        m: 0,
-      }}>
-        <Table size="small" stickyHeader sx={{ borderCollapse: 'collapse', minWidth: 400 }}>
-          <TableHead>
-            <TableRow>
-              {headers.map((header) => (
-                <TableCell
-                  key={header}
-                  sx={{
-                    fontWeight: 700,
-                    bgcolor: '#001a4d',
-                    color: '#fff',
-                    border: '2px solid #001a4d',
-                    fontSize: 15,
-                    letterSpacing: 1,
-                    textAlign: 'center',
-                    p: 1.2,
-                  }}
-                >
-                  {header.toUpperCase()}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {data.map((row, index) => (
-              <TableRow
-                key={index}
-                hover
-                sx={{
-                  background: index % 2 === 0 ? '#f4f6fa' : '#fff',
-                  '&:hover': { background: '#e3e8f0' },
-                  border: 0,
-                }}
-              >
-                {headers.map((header) => (
-                  <TableCell
-                    key={header}
-                    sx={{
-                      fontSize: 14,
-                      border: '1.5px solid #e0e0e0',
-                      textAlign: 'center',
-                      p: 1.1,
-                    }}
-                  >
-                    {typeof row[header] === 'object'
-                      ? JSON.stringify(row[header])
-                      : row[header] || '-'}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'right', fontWeight: 500 }}>
-        Toplam {data.length} kayıt bulundu
-      </Typography>
-    </Box>
-  );
-}
-
-// Enhanced message component
+// Message bubble
 function MessageBubble({ message, index }) {
   const isUser = message.sender === "user";
-  const isResult = message.type === "result";
-  
   return (
     <ListItem
       key={index}
@@ -210,7 +107,7 @@ function MessageBubble({ message, index }) {
             width: 32,
             height: 32,
             mt: 0.5,
-            flexShrink: 0
+            flexShrink: 0,
           }}
         >
           {isUser ? "S" : "A"}
@@ -219,36 +116,110 @@ function MessageBubble({ message, index }) {
           elevation={1}
           sx={{
             p: 2,
-            maxWidth: isResult ? "90%" : "75%",
+            maxWidth: "75%",
             bgcolor: isUser ? "primary.light" : "grey.100",
             color: isUser ? "white" : "text.primary",
             borderRadius: 2,
             borderTopLeftRadius: isUser ? 2 : 0.5,
             borderTopRightRadius: isUser ? 0.5 : 2,
-            width: isResult ? "100%" : "auto",
+            width: "auto",
           }}
         >
-          {isResult ? (
-            <DataRenderer data={message.data} type="result" />
-          ) : (
-            <Typography variant="body2">
-              {message.text}
-            </Typography>
-          )}
-          <Typography variant="caption" sx={{ 
-            display: 'block', 
-            mt: 1, 
-            opacity: 0.7,
-            fontSize: '0.7rem'
-          }}>
-            {new Date().toLocaleTimeString('tr-TR', { 
-              hour: '2-digit', 
-              minute: '2-digit' 
+          <Typography variant="body2">{message.text}</Typography>
+          <Typography
+            variant="caption"
+            sx={{
+              display: "block",
+              mt: 1,
+              opacity: 0.7,
+              fontSize: "0.7rem",
+            }}
+          >
+            {new Date().toLocaleTimeString("tr-TR", {
+              hour: "2-digit",
+              minute: "2-digit",
             })}
           </Typography>
         </Paper>
       </Stack>
     </ListItem>
+  );
+}
+
+// Table rendering for array results
+function ArrayResultTable({ data }) {
+  if (!Array.isArray(data) || data.length === 0) return null;
+  // Get all unique keys from all objects (for wide tables)
+  const columns = Array.from(
+    data.reduce((set, row) => {
+      Object.keys(row).forEach((k) => set.add(k));
+      return set;
+    }, new Set())
+  );
+  return (
+    <Box
+      sx={{
+        width: "100%",
+        px: { xs: 1, sm: 2 }, // small horizontal padding
+        mb: 2,
+        display: "flex",
+        justifyContent: "center",
+      }}
+    >
+      <Box
+        sx={{
+          flex: 1,
+          maxWidth: "100%",
+          background: "#fff",
+          borderRadius: 2,
+          boxShadow: 2,
+          overflowX: "auto",
+          border: "1px solid #e0e0e0",
+          p: 2,
+        }}
+      >
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              {columns.map((col) => (
+                <th
+                  key={col}
+                  style={{
+                    textAlign: "left",
+                    padding: "8px 12px",
+                    background: "#f0f4fa",
+                    fontWeight: 600,
+                    borderBottom: "2px solid #e0e0e0",
+                  }}
+                >
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row, i) => (
+              <tr key={i} style={{ background: i % 2 ? "#f9fbfd" : "#fff" }}>
+                {columns.map((col) => (
+                  <td
+                    key={col}
+                    style={{
+                      padding: "8px 12px",
+                      borderBottom: "1px solid #f0f0f0",
+                      fontSize: 15,
+                    }}
+                  >
+                    {row[col] !== undefined && row[col] !== null
+                      ? String(row[col])
+                      : ""}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Box>
+    </Box>
   );
 }
 
@@ -266,7 +237,8 @@ export default function Chat({ open = true, onClose, onMinimize }) {
     name: "John Doe",
     id_number: "123456789",
   });
-  const [parameters, setParameters] = useState({});
+  const [slotFilling, setSlotFilling] = useState(null); // slot-filling state
+  const [collectedParams, setCollectedParams] = useState({}); // tüm toplanan parametreler
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -284,19 +256,41 @@ export default function Chat({ open = true, onClose, onMinimize }) {
       .catch((error) => console.error("Error fetching apps:", error));
   }, []);
 
-  const sendMessage = async (userMessage) => {
+  // Slot-filling aware sendMessage
+  const sendMessage = async (
+    userMessage,
+    slotFillingState = null,
+    paramsToSend = {}
+  ) => {
     setMessages((msgs) => [...msgs, { sender: "user", text: userMessage }]);
-    
+
+    let body;
+    if (slotFillingState) {
+      body = {
+        app_name: selectedApp,
+        user_message: slotFillingState.originalUserMessage,
+        user_context: userContext,
+        parameters: paramsToSend,
+        slot_filling: {
+          endpoint: slotFillingState.endpoint,
+          missing_parameters: slotFillingState.missingParameters,
+        },
+      };
+    } else {
+      body = {
+        app_name: selectedApp,
+        user_message: userMessage,
+        user_context: userContext,
+        parameters: paramsToSend,
+      };
+    }
+    console.log("[DEBUG] Payload to backend:", JSON.stringify(body, null, 2));
+
     try {
       const response = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          app_name: selectedApp,
-          user_message: userMessage,
-          user_context: userContext,
-          parameters,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
@@ -304,24 +298,42 @@ export default function Chat({ open = true, onClose, onMinimize }) {
       }
 
       const data = await response.json();
-      console.log(data);
-
-      if (data.status === "need_parameters" && data.missing_parameters.length > 0) {
-        setMessages((msgs) => [...msgs, { sender: "agent", text: data.prompt }]);
+      if (
+        data.status === "need_parameters" &&
+        data.missing_parameters.length > 0
+      ) {
+        // Slot-filling başlat veya devam ettir
+        setSlotFilling({
+          endpoint: data.endpoint,
+          missingParameters: data.missing_parameters.slice(1),
+          currentParameter: data.missing_parameters[0],
+          originalUserMessage:
+            slotFillingState?.originalUserMessage || userMessage,
+          optionalParameters: data.endpoint.parameters
+            ? JSON.parse(data.endpoint.parameters)
+                .filter((p) => !p.required)
+                .map((p) => p.name)
+            : [],
+          optionalIndex: 0,
+          askingOptional: false,
+        });
+        setMessages((msgs) => [
+          ...msgs,
+          { sender: "agent", text: data.prompt },
+        ]);
         setInput("");
       } else if (data.status === "success") {
-        // Check if result is an array for table display
-        const isArrayResult = Array.isArray(data.result);
         setMessages((msgs) => [
           ...msgs,
           {
             sender: "agent",
-            type: isArrayResult ? "result" : "text",
-            text: isArrayResult ? "" : `İşlem tamamlandı! Sonuç: ${JSON.stringify(data.result)}`,
-            data: isArrayResult ? data.result : null,
+            text: Array.isArray(data.result)
+              ? "İşlem tamamlandı! Sonuç: " + JSON.stringify(data.result)
+              : `İşlem tamamlandı! Sonuç: ${JSON.stringify(data.result)}`,
           },
         ]);
-        setParameters({});
+        setSlotFilling(null);
+        setCollectedParams({});
       } else if (data.status === "no_match") {
         setMessages((msgs) => [
           ...msgs,
@@ -330,26 +342,33 @@ export default function Chat({ open = true, onClose, onMinimize }) {
             text: data.message || "Uygun bir işlem bulunamadı.",
           },
         ]);
+        setSlotFilling(null);
+        setCollectedParams({});
       } else if (data.status === "error") {
         setMessages((msgs) => [
           ...msgs,
           { sender: "agent", text: data.message || "Bir hata oluştu." },
         ]);
+        setSlotFilling(null);
+        setCollectedParams({});
       } else {
         setMessages((msgs) => [
           ...msgs,
           { sender: "agent", text: "Bir hata oluştu." },
         ]);
+        setSlotFilling(null);
+        setCollectedParams({});
       }
     } catch (error) {
-      console.error('Connection error:', error);
       setMessages((msgs) => [
         ...msgs,
-        { 
-          sender: "agent", 
-          text: "Bağlantı hatası: Backend sunucusuna ulaşılamıyor. Lütfen sunucunun çalıştığından emin olun." 
+        {
+          sender: "agent",
+          text: "Bağlantı hatası: Backend sunucusuna ulaşılamıyor. Lütfen sunucunun çalıştığından emin olun.",
         },
       ]);
+      setSlotFilling(null);
+      setCollectedParams({});
     }
   };
 
@@ -357,39 +376,155 @@ export default function Chat({ open = true, onClose, onMinimize }) {
     e.preventDefault();
     if (!input.trim()) return;
 
-    const lastAgentMsg = messages[messages.length - 1];
-    if (
-      lastAgentMsg.sender === "agent" &&
-      lastAgentMsg.text.startsWith("Please provide the following parameters:")
-    ) {
-      const paramName = lastAgentMsg.text.split(":")[1].trim().split(",")[0];
-      setParameters((prev) => {
-        const updated = { ...prev, [paramName]: input };
-        sendMessage(messages.find((m) => m.sender === "user").text);
-        return updated;
-      });
+    if (slotFilling) {
+      // Opsiyonel parametre soruluyor mu?
+      if (slotFilling.askingOptional) {
+        if (slotFilling.askingOptional === "value") {
+          // Opsiyonel parametre değeri girildi
+          const paramName =
+            slotFilling.optionalParameters[slotFilling.optionalIndex];
+          let updatedParams = { ...collectedParams };
+          if (input.trim() !== "") {
+            updatedParams[paramName] = input;
+          }
+          // setCollectedParams(updatedParams); // Kaldırıldı, çünkü state asenkron
+          // Sıradaki opsiyonel parametreye geç
+          const nextIndex = slotFilling.optionalIndex + 1;
+          if (
+            slotFilling.optionalParameters &&
+            nextIndex < slotFilling.optionalParameters.length
+          ) {
+            setSlotFilling({
+              ...slotFilling,
+              optionalIndex: nextIndex,
+              askingOptional: true,
+            });
+            setMessages((msgs) => [
+              ...msgs,
+              {
+                sender: "agent",
+                text: `${slotFilling.optionalParameters[nextIndex]} parametresini girmek ister misiniz? (evet/hayır)`,
+              },
+            ]);
+          } else {
+            // Tüm opsiyoneller bitti, API çağrısı yap
+            await sendMessage("", slotFilling, updatedParams); // input yerine "" gönder!
+            setSlotFilling(null);
+            setCollectedParams({}); // Temizle
+          }
+          setInput(""); // input'u sıfırla
+        } else {
+          // Kullanıcı evet/hayır dedi
+          if (input.trim().toLowerCase() === "evet") {
+            // Şimdi değerini iste
+            setSlotFilling({
+              ...slotFilling,
+              askingOptional: "value",
+            });
+            setMessages((msgs) => [
+              ...msgs,
+              {
+                sender: "agent",
+                text: `${
+                  slotFilling.optionalParameters[slotFilling.optionalIndex]
+                } değerini girin:`,
+              },
+            ]);
+          } else {
+            // Hayır dediyse sıradaki opsiyonel parametreye geç
+            const nextIndex = slotFilling.optionalIndex + 1;
+            if (nextIndex < slotFilling.optionalParameters.length) {
+              setSlotFilling({
+                ...slotFilling,
+                optionalIndex: nextIndex,
+                askingOptional: true,
+              });
+              setMessages((msgs) => [
+                ...msgs,
+                {
+                  sender: "agent",
+                  text: `${slotFilling.optionalParameters[nextIndex]} parametresini girmek ister misiniz? (evet/hayır)`,
+                },
+              ]);
+            } else {
+              // Tüm opsiyoneller bitti, API çağrısı yap
+              await sendMessage(input, slotFilling, collectedParams);
+              setSlotFilling(null);
+            }
+          }
+        }
+      } else {
+        // Zorunlu parametre slot-filling
+        const paramName = slotFilling.currentParameter;
+        const updatedParams = { ...collectedParams, [paramName]: input };
+        setCollectedParams(updatedParams);
+        // Eğer missingParameters bitti ise opsiyonellere geç
+        if (slotFilling.missingParameters.length === 0) {
+          if (
+            slotFilling.optionalParameters &&
+            slotFilling.optionalParameters.length > 0
+          ) {
+            setSlotFilling({
+              ...slotFilling,
+              askingOptional: true,
+            });
+            setMessages((msgs) => [
+              ...msgs,
+              {
+                sender: "agent",
+                text: `${slotFilling.optionalParameters[0]} parametresini girmek ister misiniz? (evet/hayır)`,
+              },
+            ]);
+          } else {
+            // Hiç opsiyonel yok, API çağrısı yap
+            await sendMessage(input, slotFilling, updatedParams);
+            setSlotFilling(null);
+          }
+        } else {
+          // Zorunlu parametre slot-filling devam
+          setSlotFilling({
+            ...slotFilling,
+            currentParameter: slotFilling.missingParameters[0],
+            missingParameters: slotFilling.missingParameters.slice(1),
+          });
+          setMessages((msgs) => [
+            ...msgs,
+            {
+              sender: "agent",
+              text: `Please provide the following parameter: ${slotFilling.missingParameters[0]}`,
+            },
+          ]);
+        }
+      }
     } else {
-      sendMessage(input);
+      // İlk intent mesajı
+      setCollectedParams({});
+      await sendMessage(input, null, {});
     }
     setInput("");
   };
 
   // Sohbeti temizle fonksiyonu
   const handleClearChat = (e) => {
-    e?.stopPropagation(); // Prevent drag or modal move on click
+    e?.stopPropagation();
     setMessages([
       { sender: "agent", text: "Merhaba! Size nasıl yardımcı olabilirim?" },
     ]);
-    setParameters({});
+    setSlotFilling(null);
+    setCollectedParams({});
   };
 
   // Uygulama değiştirme fonksiyonu
   const handleAppChange = (e) => {
     setSelectedApp(e.target.value);
     setMessages([
-      { sender: "agent", text: `${e.target.value} uygulaması seçildi. Size nasıl yardımcı olabilirim?` },
+      {
+        sender: "agent",
+        text: `${e.target.value} uygulaması seçildi. Size nasıl yardımcı olabilirim?`,
+      },
     ]);
-    setParameters({});
+    setSlotFilling(null);
+    setCollectedParams({});
   };
 
   return (
@@ -407,7 +542,14 @@ export default function Chat({ open = true, onClose, onMinimize }) {
         minConstraints={[400, 500]}
         maxConstraints={[window.innerWidth - 40, window.innerHeight - 40]}
         resizeHandles={["se"]}
-        style={{ overflow: "hidden", background: "#fff", borderRadius: 0, boxShadow: 'none', display: 'flex', flexDirection: 'column' }}
+        style={{
+          overflow: "hidden",
+          background: "#fff",
+          borderRadius: 0,
+          boxShadow: "none",
+          display: "flex",
+          flexDirection: "column",
+        }}
       >
         <DialogTitle
           style={{
@@ -419,29 +561,23 @@ export default function Chat({ open = true, onClose, onMinimize }) {
             paddingRight: 80,
             borderTopLeftRadius: 0,
             borderTopRightRadius: 0,
-            borderBottom: '1px solid #e0e0e0',
+            borderBottom: "1px solid #e0e0e0",
             minHeight: 56,
             height: 56,
-            boxSizing: 'border-box',
+            boxSizing: "border-box",
           }}
           id="draggable-dialog-title"
         >
-          <img
-            src="/jandarma-logo.png"
-            alt="Jandarma Logo"
-            style={{ height: 36, marginRight: 12 }}
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
           <span
             style={{ fontWeight: 700, fontSize: 18, letterSpacing: 1, flex: 1 }}
           >
             Sohbet Penceresi
           </span>
           {selectedApp && (
-            <Chip 
-              label={selectedApp} 
-              size="small" 
-              sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', mr: 2 }}
+            <Chip
+              label={selectedApp}
+              size="small"
+              sx={{ bgcolor: "rgba(255,255,255,0.2)", color: "white", mr: 2 }}
             />
           )}
           <IconButton
@@ -473,14 +609,14 @@ export default function Chat({ open = true, onClose, onMinimize }) {
           sx={{
             p: 0,
             flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
+            display: "flex",
+            flexDirection: "column",
             background: "#fff",
             borderBottomLeftRadius: 0,
             borderBottomRightRadius: 0,
             minHeight: 0,
-            height: 'calc(100% - 56px)',
-            boxSizing: 'border-box',
+            height: "calc(100% - 56px)",
+            boxSizing: "border-box",
           }}
         >
           <Box
@@ -492,7 +628,7 @@ export default function Chat({ open = true, onClose, onMinimize }) {
               borderRadius: 0,
               display: "flex",
               flexDirection: "column",
-              justifyContent: 'stretch',
+              justifyContent: "stretch",
             }}
           >
             {!selectedApp ? (
@@ -527,8 +663,17 @@ export default function Chat({ open = true, onClose, onMinimize }) {
                 </CardContent>
               </Card>
             ) : (
-              <Card elevation={3} sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-                <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+              <Card
+                elevation={3}
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <CardContent
+                  sx={{ flex: 1, display: "flex", flexDirection: "column" }}
+                >
                   <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                     <Typography variant="h5" sx={{ flex: 1 }}>
                       Sohbet
@@ -542,37 +687,52 @@ export default function Chat({ open = true, onClose, onMinimize }) {
                     </Button>
                   </Box>
                   <Divider sx={{ mb: 2 }} />
-                  {/* Make the message list area resizable */}
-                  <ResizableBox
-                    axis="y"
-                    minConstraints={[100, 120]}
-                    maxConstraints={[Infinity, 500]}
-                    height={320}
-                    width={Infinity}
-                    handle={<span style={{display:'block',height:6,background:'#e0e0e0',cursor:'row-resize',borderRadius:3}} />} 
-                    style={{ width: '100%', marginBottom: 16, background: 'transparent' }}
+                  {/* Chat area with table rendering */}
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      flex: 1,
+                      overflowY: "auto",
+                      p: 1,
+                      background: "#f8fafc",
+                      height: 320,
+                      minHeight: 100,
+                      maxHeight: 500,
+                      boxSizing: "border-box",
+                      mb: 2,
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
                   >
-                    <Paper
-                      variant="outlined"
-                      sx={{
-                        flex: 1,
-                        overflowY: "auto",
-                        p: 1,
-                        background: "#f8fafc",
-                        height: '100%',
-                        minHeight: 100,
-                        maxHeight: 500,
-                        boxSizing: 'border-box',
-                      }}
-                    >
-                      <List sx={{ py: 0, maxHeight: '100%', overflowY: 'auto' }}>
-                        {messages.map((msg, idx) => (
-                          <MessageBubble key={idx} message={msg} index={idx} />
-                        ))}
-                        <div ref={messagesEndRef} />
-                      </List>
-                    </Paper>
-                  </ResizableBox>
+                    {/* Render chat messages and tables in order */}
+                    <List sx={{ py: 0, maxHeight: "100%", overflowY: "auto" }}>
+                      {messages.map((msg, idx) => {
+                        // Detect if this is an agent message with array result
+                        if (
+                          msg.sender === "agent" &&
+                          typeof msg.text === "string" &&
+                          msg.text.startsWith("İşlem tamamlandı! Sonuç: ")
+                        ) {
+                          let arr;
+                          try {
+                            const jsonStr = msg.text.replace(
+                              /^İşlem tamamlandı! Sonuç: /,
+                              ""
+                            );
+                            arr = JSON.parse(jsonStr);
+                          } catch {
+                            arr = null;
+                          }
+                          if (Array.isArray(arr)) {
+                            return <ArrayResultTable key={idx} data={arr} />;
+                          }
+                        }
+                        // Default: render as message bubble
+                        return <MessageBubble key={idx} message={msg} index={idx} />;
+                      })}
+                      <div ref={messagesEndRef} />
+                    </List>
+                  </Paper>
                   <Box
                     component="form"
                     onSubmit={handleSubmit}
