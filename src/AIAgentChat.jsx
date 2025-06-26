@@ -21,6 +21,7 @@ import {
 import SendIcon from "@mui/icons-material/Send";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { v4 as uuidv4 } from "uuid";
 
 // Yes/No Prompt for optional parameters
 function YesNoPrompt({ prompt, onAnswer }) {
@@ -192,6 +193,16 @@ function MessageBubble({ message, index }) {
     }
   }
 
+  // Fix: If message.text is an array, join as string; if object, stringify
+  let displayText = message.text;
+  if (Array.isArray(displayText)) {
+    displayText = displayText
+      .map((item) => (typeof item === "object" ? JSON.stringify(item) : String(item)))
+      .join(", ");
+  } else if (typeof displayText === "object" && displayText !== null) {
+    displayText = JSON.stringify(displayText, null, 2);
+  }
+
   return (
     <ListItem
       key={index}
@@ -225,7 +236,7 @@ function MessageBubble({ message, index }) {
             borderRadius: 2,
           }}
         >
-          <Typography variant="body2">{message.text}</Typography>
+          <Typography variant="body2">{displayText}</Typography>
         </Paper>
       </Stack>
     </ListItem>
@@ -247,6 +258,7 @@ export function AIAgentChat({ open, onClose }) {
   const [allCollectedParams, setAllCollectedParams] = useState({});
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const sessionIdRef = useRef(uuidv4());
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -270,6 +282,7 @@ export function AIAgentChat({ open, onClose }) {
     setMessages([]);
     setSlotFilling(null);
     setAllCollectedParams({});
+    sessionIdRef.current = uuidv4(); // New session for new app
   };
 
   const handleOptionalYesNo = async (answer) => {
@@ -308,6 +321,7 @@ export function AIAgentChat({ open, onClose }) {
         user_context: userContext,
         parameters: slotFilling.collected_parameters,
         slot_filling: null,
+        session_id: sessionIdRef.current,
       };
 
       console.log("[DEBUG] Sending payload for 'hayır' response:", payload);
@@ -433,6 +447,7 @@ export function AIAgentChat({ open, onClose }) {
       user_context: userContext,
       parameters: paramsToSend,
       slot_filling: backendSlotFillingState,
+      session_id: sessionIdRef.current,
     };
 
     console.log("[DEBUG] Sending to backend:", JSON.stringify(body, null, 2));
@@ -449,7 +464,16 @@ export function AIAgentChat({ open, onClose }) {
       const data = await response.json();
       setAllCollectedParams(data.collected_parameters || allCollectedParams);
 
-      if (
+      // Display history if present
+      if (data.history && Array.isArray(data.history)) {
+        setMessages(
+          data.history.map((h) => ({
+            sender: h.sender,
+            text: h.text,
+            ...(h.result ? { result: h.result } : {}),
+          }))
+        );
+      } else if (
         data.status === "need_parameters" &&
         data.missing_parameters.length > 0
       ) {
@@ -573,7 +597,22 @@ export function AIAgentChat({ open, onClose }) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth={false}
+      fullWidth={false}
+      PaperProps={{
+        sx: {
+          resize: 'both',
+          overflow: 'auto',
+          minWidth: 340,
+          width: 420,
+          minHeight: 340,
+          maxHeight: '90vh',
+        },
+      }}
+    >
       <DialogTitle
         sx={{
           background: "linear-gradient(90deg, #001a4d 0%, #f5002f 100%)",
@@ -605,7 +644,7 @@ export function AIAgentChat({ open, onClose }) {
         <IconButton
           aria-label="clear"
           onClick={handleClearChat}
-          sx={{ color: "#f5002f", ml: "auto", mr: 1 }}
+          sx={{ color: "#fff", ml: "auto", mr: 1 }}
           title="Sohbeti Temizle"
         >
           <DeleteIcon />
@@ -619,7 +658,16 @@ export function AIAgentChat({ open, onClose }) {
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-      <DialogContent sx={{ p: 2, background: "#f8fafc" }}>
+      <DialogContent
+        sx={{
+          p: 2,
+          background: '#f8fafc',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '60vh',
+          minHeight: 320,
+        }}
+      >
         <FormControl fullWidth sx={{ mb: 2, mt: 3 }}>
           <InputLabel id="agent-app-select-label">Uygulama Seçin</InputLabel>
           <Select
@@ -635,18 +683,20 @@ export function AIAgentChat({ open, onClose }) {
             ))}
           </Select>
         </FormControl>
-
         <Paper
           variant="outlined"
           sx={{
-            minHeight: 180,
-            maxHeight: 320,
-            overflowY: "auto",
+            flex: '1 1 0',
+            minHeight: 120,
+            maxHeight: 'none',
+            overflowY: 'auto',
             mb: 2,
             p: 1,
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
-          <List>
+          <List sx={{ flex: 1, overflowY: 'auto' }}>
             {messages.map((msg, idx) => (
               <MessageBubble key={idx} message={msg} index={idx} />
             ))}
