@@ -144,12 +144,16 @@ const ListAgentApplications = () => {
           maxWidth="xs"
           fullWidth
         >
-          <DialogTitle sx={{ textAlign: "center" }}>Yeni Agent Uygulaması</DialogTitle>
+          <DialogTitle sx={{ textAlign: "center" }}>
+            Yeni Agent Uygulaması
+          </DialogTitle>
           <DialogContent>
-            <CreateAgentApplication onSuccess={() => {
-              handleCloseModal();
-              fetchApps();
-            }} />
+            <CreateAgentApplication
+              onSuccess={() => {
+                handleCloseModal();
+                fetchApps();
+              }}
+            />
           </DialogContent>
         </Dialog>
       </Paper>

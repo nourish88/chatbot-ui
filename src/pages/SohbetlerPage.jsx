@@ -1,30 +1,21 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Paper,
   Typography,
   Box,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  useMediaQuery,
-  useTheme,
   IconButton,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import FeedbackIcon from "@mui/icons-material/Feedback";
+import DataTable from "../components/common/DataTable";
+import FormDialog from "../components/common/FormDialog";
+import LoadingIndicator from "../components/common/LoadingIndicator";
 
 const SohbetlerPage = () => {
   const [apps, setApps] = useState([]);
@@ -38,6 +29,13 @@ const SohbetlerPage = () => {
   const [feedbackText, setFeedbackText] = useState("");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const columns = [
+    { field: "user", headerName: "Kullanıcı" },
+    { field: "user_message", headerName: "Soru" },
+    { field: "bot_response", headerName: "Cevap" },
+    { field: "timestamp", headerName: "Zaman" },
+  ];
 
   useEffect(() => {
     fetch("http://localhost:8000/apps/")
@@ -159,108 +157,55 @@ const SohbetlerPage = () => {
           </Select>
         </FormControl>
         {selectedApp && (
-          <TableContainer
-            sx={{
-              width: "100%",
-              maxHeight: "55vh",
-              overflowY: "auto",
-              overflowX: "auto",
-            }}
-          >
-            <Table size={isMobile ? "small" : "medium"} stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Kullanıcı</TableCell>
-                  <TableCell>Soru</TableCell>
-                  <TableCell>Cevap</TableCell>
-                  <TableCell>Zaman</TableCell>
-                  <TableCell align="right">İşlem</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {Array.isArray(chats) && chats.length > 0 ? (
-                  chats
-                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((chat) => (
-                      <TableRow key={chat.id}>
-                        <TableCell>TODO</TableCell>
-                        <TableCell>{chat.user_message}</TableCell>
-                        <TableCell>{chat.bot_response}</TableCell>
-                        <TableCell>{chat.timestamp}</TableCell>
-                        <TableCell align="right">
-                          <IconButton
-                            color="primary"
-                            onClick={() => handleOpenFeedback(chat.id)}
-                            size={isMobile ? "small" : "medium"}
-                            aria-label="feedback"
-                          >
-                            <FeedbackIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} align="center">
-                      {loading
-                        ? "Yükleniyor..."
-                        : "Hiç sohbet bulunamadı veya bir hata oluştu."}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-        {selectedApp && (
-          <TablePagination
-            component="div"
-            count={Array.isArray(chats) ? chats.length : 0}
+          <DataTable
+            columns={columns}
+            rows={chats
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((chat) => ({
+                ...chat,
+                user: "TODO", // Replace with actual user if available
+              }))}
+            loading={loading}
             page={page}
-            onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
+            onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            rowsPerPageOptions={[5, 10, 25, 50]}
-            sx={{ width: "100%" }}
+            totalCount={chats.length}
+            actions={(row) => (
+              <IconButton
+                color="primary"
+                onClick={() => handleOpenFeedback(row.id)}
+                size={isMobile ? "small" : "medium"}
+                aria-label="feedback"
+              >
+                <FeedbackIcon />
+              </IconButton>
+            )}
           />
         )}
-      </Paper>
-      <Dialog
-        open={feedbackOpen}
-        onClose={handleCloseFeedback}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>Geri Bildirim</DialogTitle>
-        <DialogContent>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>
-            Soru:
-          </Typography>
-          <Typography variant="body2" sx={{ mb: 2, color: "#1a237e" }}>
-            {feedbackChatId &&
-              chats.find((c) => c.id === feedbackChatId)?.user_message}
-          </Typography>
+        <FormDialog
+          open={feedbackOpen}
+          onClose={handleCloseFeedback}
+          title="Geri Bildirim Ekle"
+          loading={loading}
+          error={null}
+          onSubmit={async (e) => {
+            e.preventDefault();
+            await handleSubmitFeedback();
+          }}
+          actions={null}
+        >
           <TextField
-            label="Doğru Cevap"
+            label="Geri Bildirim"
             value={feedbackText}
             onChange={(e) => setFeedbackText(e.target.value)}
+            required
             fullWidth
-            multiline
-            minRows={3}
-            autoFocus
+            sx={{ mb: 2, maxWidth: 350 }}
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseFeedback}>İptal</Button>
-          <Button
-            onClick={handleSubmitFeedback}
-            variant="contained"
-            disabled={!feedbackText.trim()}
-          >
-            Gönder
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </FormDialog>
+        {loading && <LoadingIndicator message="Yükleniyor..." />}
+      </Paper>
     </Box>
   );
 };

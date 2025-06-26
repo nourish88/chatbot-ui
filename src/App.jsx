@@ -1,15 +1,15 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Sidebar from "./Sidebar";
-import ListApplications from "./ListApplications";
-import Chat, { GraphChatModal } from "./Chat";
-import DocumentsPage from "./DocumentsPage";
-import SohbetlerPage from "./SohbetlerPage";
-import FeedbacksPage from "./FeedbacksPage";
+import Sidebar from "./components/sidebar/Sidebar";
+import ListApplications from "./features/applications/ListApplications";
+import Chat, { GraphChatModal } from "./components/chat/Chat";
+import DocumentsPage from "./pages/DocumentsPage";
+import SohbetlerPage from "./pages/SohbetlerPage";
+import FeedbacksPage from "./pages/FeedbacksPage";
 import { AppBar, Toolbar, Typography, Box } from "@mui/material";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import SettingsSuggestIcon from "@mui/icons-material/SettingsSuggest";
-import ListAgentApplications from "./ListAgentApplications";
+import ListAgentApplications from "./features/agentApplications/ListAgentApplications";
 
 function App() {
   const [chatOpen, setChatOpen] = React.useState(false); // default: false
@@ -117,7 +117,10 @@ function App() {
             />
           )}
           {graphChatOpen && (
-            <GraphChatModal open={graphChatOpen} onClose={() => setGraphChatOpen(false)} />
+            <GraphChatModal
+              open={graphChatOpen}
+              onClose={() => setGraphChatOpen(false)}
+            />
           )}
           {/* Floating Action Buttons */}
           {(!chatOpen || minimized) && (

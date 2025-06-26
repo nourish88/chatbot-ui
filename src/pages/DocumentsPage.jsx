@@ -1,15 +1,9 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Paper,
   Typography,
   Box,
-  Alert,
-  CircularProgress,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
   Select,
   MenuItem,
@@ -18,16 +12,14 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
+import DataTable from "../components/common/DataTable";
+import FormDialog from "../components/common/FormDialog";
+import LoadingIndicator from "../components/common/LoadingIndicator";
+import ErrorAlert from "../components/common/ErrorAlert";
 
-const docColumns = [
-  { field: "name", headerName: "Belge Adı", flex: 1, minWidth: 150 },
-  {
-    field: "uploaded_at",
-    headerName: "Yüklenme Tarihi",
-    flex: 1,
-    minWidth: 180,
-  },
+const columns = [
+  { field: "name", headerName: "Belge Adı" },
+  { field: "uploaded_at", headerName: "Yüklenme Tarihi" },
 ];
 
 const DocumentsPage = () => {
@@ -129,24 +121,26 @@ const DocumentsPage = () => {
     <Box
       sx={{
         flex: 1,
+        marginTop: "70px",
+        marginLeft: "25px",
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "flex-start",
         minHeight: "calc(100vh - 64px)",
         background: "#f4f6f8",
       }}
     >
       <Paper
         sx={{
-          width: 700,
+          width: "100%",
+          maxWidth: 1200,
           mx: "auto",
           p: 5,
           background: "#fff",
           boxShadow: 2,
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
+          alignItems: "flex-start",
         }}
         elevation={3}
       >
@@ -169,7 +163,7 @@ const DocumentsPage = () => {
             Yeni Ekle
           </Button>
         </Box>
-        <FormControl fullWidth sx={{ mb: 3, maxWidth: 350, mx: "auto" }}>
+        <FormControl fullWidth sx={{ mb: 3, ml: { xs: 0, sm: 2 }, mt: 2 }}>
           <InputLabel id="app-select-label">Uygulama Seçin</InputLabel>
           <Select
             labelId="app-select-label"
@@ -184,101 +178,64 @@ const DocumentsPage = () => {
             ))}
           </Select>
         </FormControl>
-        {loading && (
-          <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-            <CircularProgress />
-          </Box>
-        )}
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+        {loading && <LoadingIndicator message="Yükleniyor..." />}
+        {error && <ErrorAlert message={error} />}
         {!loading && !error && selectedApp && (
-          <Box sx={{ width: "100%", height: 500 }}>
-            <DataGrid
-              rows={documents.map((doc) => ({ ...doc, id: doc.id }))}
-              columns={docColumns}
-              pageSize={8}
-              rowsPerPageOptions={[8, 16, 32]}
-              autoHeight={false}
-              disableSelectionOnClick
-              sx={{
-                background: "#fff",
-                borderRadius: 2,
-                boxShadow: 0,
-                border: "1px solid #e0e0e0",
-                "& .MuiDataGrid-columnHeaders": { background: "#f1f5fa" },
-              }}
-            />
-          </Box>
+          <DataTable
+            columns={columns}
+            rows={documents.slice(0, 50).map((doc) => ({
+              ...doc,
+              uploaded_at: doc.uploaded_at
+                ? new Date(doc.uploaded_at).toLocaleString("tr-TR")
+                : "",
+            }))}
+            loading={loading}
+            page={0}
+            rowsPerPage={50}
+            onPageChange={() => {}}
+            onRowsPerPageChange={() => {}}
+            totalCount={documents.length}
+          />
         )}
-        <Dialog
+        <FormDialog
           open={modalOpen}
           onClose={handleCloseModal}
-          fullScreen={fullScreen}
-          maxWidth="xs"
-          fullWidth
+          title="Belge Yükle"
+          loading={formLoading}
+          error={formError}
+          onSubmit={handleUpload}
+          actions={null}
         >
-          <DialogTitle sx={{ textAlign: "center" }}>Belge Yükle</DialogTitle>
-          <form onSubmit={handleUpload} encType="multipart/form-data">
-            <DialogContent
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-            >
-              {formError && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  {formError}
-                </Alert>
-              )}
-              <TextField
-                label="Belge Adı"
-                value={docName}
-                onChange={(e) => setDocName(e.target.value)}
-                required
-                fullWidth
-                sx={{ mb: 2, maxWidth: 350 }}
-                autoFocus
-              />
-              <Button
-                variant="outlined"
-                component="label"
-                fullWidth
-                sx={{ mb: 2, maxWidth: 350 }}
-              >
-                Dosya Seç (PDF, DOCX, TXT)
-                <input
-                  type="file"
-                  accept=".pdf,.docx,.txt"
-                  hidden
-                  onChange={(e) => setDocFile(e.target.files[0])}
-                  required
-                />
-              </Button>
-              {docFile && (
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  {docFile.name}
-                </Typography>
-              )}
-            </DialogContent>
-            <DialogActions sx={{ justifyContent: "center" }}>
-              <Button onClick={handleCloseModal} disabled={formLoading}>
-                İptal
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                disabled={formLoading || !docFile}
-              >
-                {formLoading ? "Yükleniyor..." : "Yükle"}
-              </Button>
-            </DialogActions>
-          </form>
-        </Dialog>
+          <TextField
+            label="Belge Adı"
+            value={docName}
+            onChange={(e) => setDocName(e.target.value)}
+            required
+            fullWidth
+            sx={{ mb: 2, maxWidth: 350 }}
+            autoFocus
+          />
+          <Button
+            variant="outlined"
+            component="label"
+            fullWidth
+            sx={{ mb: 2, maxWidth: 350 }}
+          >
+            Dosya Seç (PDF, DOCX, TXT)
+            <input
+              type="file"
+              accept=".pdf,.docx,.txt"
+              hidden
+              onChange={(e) => setDocFile(e.target.files[0])}
+              required
+            />
+          </Button>
+          {docFile && (
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              {docFile.name}
+            </Typography>
+          )}
+        </FormDialog>
       </Paper>
     </Box>
   );

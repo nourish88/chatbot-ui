@@ -1,30 +1,22 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Paper,
   Typography,
   Box,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
   useMediaQuery,
   useTheme,
-  IconButton,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import DataTable from "../components/common/DataTable";
+import FormDialog from "../components/common/FormDialog";
+import LoadingIndicator from "../components/common/LoadingIndicator";
+import ErrorAlert from "../components/common/ErrorAlert";
 
 const FeedbacksPage = () => {
   const [apps, setApps] = useState([]);
@@ -39,6 +31,12 @@ const FeedbacksPage = () => {
   const [formError, setFormError] = useState("");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const columns = [
+    { field: "user_prompt", headerName: "Kullanıcı Mesajı" },
+    { field: "correct_answer", headerName: "Doğru Cevap" },
+    { field: "created_at", headerName: "Tarih" },
+  ];
 
   useEffect(() => {
     fetch("http://localhost:8000/apps/")
@@ -133,9 +131,9 @@ const FeedbacksPage = () => {
     >
       <Paper
         sx={{
-          width: '100%',
+          width: "100%",
           maxWidth: 1200,
-          minWidth: isMobile ? '100%' : 360,
+          minWidth: isMobile ? "100%" : 360,
           mx: "auto",
           p: isMobile ? 2 : 5,
           background: "#fff",
@@ -143,8 +141,8 @@ const FeedbacksPage = () => {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          maxHeight: 'calc(100vh - 120px)',
-          overflow: 'hidden',
+          maxHeight: "calc(100vh - 120px)",
+          overflow: "hidden",
         }}
         elevation={3}
       >
@@ -166,92 +164,70 @@ const FeedbacksPage = () => {
             ))}
           </Select>
         </FormControl>
-        <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            justifyContent: "flex-end",
+            mb: 2,
+          }}
+        >
           {selectedApp && (
-            <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenModal}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenModal}
+            >
               Yeni Ekle
             </Button>
           )}
         </Box>
         {selectedApp && (
-          <TableContainer sx={{ width: "100%", maxHeight: '55vh', overflowY: 'auto', overflowX: 'auto' }}>
-            <Table size={isMobile ? "small" : "medium"} stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Kullanıcı Mesajı</TableCell>
-                  <TableCell>Doğru Cevap</TableCell>
-                  <TableCell>Tarih</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
-                  feedbacks
-                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((fb) => (
-                      <TableRow key={fb.id}>
-                        <TableCell>{fb.user_prompt}</TableCell>
-                        <TableCell>{fb.correct_answer}</TableCell>
-                        <TableCell>{new Date(fb.created_at).toLocaleString('tr-TR')}</TableCell>
-                      </TableRow>
-                    ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={3} align="center">
-                      {loading
-                        ? "Yükleniyor..."
-                        : "Hiç geri bildirim bulunamadı veya bir hata oluştu."}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-        {selectedApp && (
-          <TablePagination
-            component="div"
-            count={Array.isArray(feedbacks) ? feedbacks.length : 0}
+          <DataTable
+            columns={columns}
+            rows={feedbacks
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((fb) => ({
+                ...fb,
+                created_at: new Date(fb.created_at).toLocaleString("tr-TR"),
+              }))}
+            loading={loading}
             page={page}
-            onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
+            onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            rowsPerPageOptions={[5, 10, 25, 50]}
-            sx={{ width: "100%" }}
+            totalCount={feedbacks.length}
           />
         )}
+        <FormDialog
+          open={modalOpen}
+          onClose={handleCloseModal}
+          title="Geri Bildirim Ekle"
+          loading={loading}
+          error={formError}
+          onSubmit={handleSubmit}
+          actions={null}
+        >
+          <TextField
+            label="Kullanıcı Mesajı"
+            value={formUserPrompt}
+            onChange={(e) => setFormUserPrompt(e.target.value)}
+            required
+            fullWidth
+            sx={{ mb: 2, maxWidth: 350 }}
+          />
+          <TextField
+            label="Doğru Cevap"
+            value={formCorrectAnswer}
+            onChange={(e) => setFormCorrectAnswer(e.target.value)}
+            required
+            fullWidth
+            sx={{ mb: 2, maxWidth: 350 }}
+          />
+        </FormDialog>
+        {loading && <LoadingIndicator message="Yükleniyor..." />}
+        {formError && <ErrorAlert message={formError} />}
       </Paper>
-      <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="xs" fullWidth>
-        <DialogTitle>Yeni Geri Bildirim</DialogTitle>
-        <form onSubmit={handleSubmit}>
-          <DialogContent>
-            {formError && (
-              <Typography color="error" sx={{ mb: 2 }}>{formError}</Typography>
-            )}
-            <TextField
-              label="Kullanıcı Mesajı"
-              value={formUserPrompt}
-              onChange={(e) => setFormUserPrompt(e.target.value)}
-              fullWidth
-              required
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              label="Doğru Cevap"
-              value={formCorrectAnswer}
-              onChange={(e) => setFormCorrectAnswer(e.target.value)}
-              fullWidth
-              required
-              sx={{ mb: 2 }}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseModal}>İptal</Button>
-            <Button type="submit" variant="contained" disabled={loading}>
-              Kaydet
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
     </Box>
   );
 };

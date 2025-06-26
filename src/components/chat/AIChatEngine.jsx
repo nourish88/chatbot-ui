@@ -1,27 +1,21 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   IconButton,
   Paper,
-  Typography,
   Box,
-  TextField,
-  Button,
-  List,
-  ListItem,
-  Avatar,
-  Stack,
   CircularProgress,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
 } from "@mui/material";
-import SendIcon from "@mui/icons-material/Send";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
+import ChatMessageList from "./ChatMessageList";
+import ChatInput from "./ChatInput";
 
 export function AIChatEngine({ open, onClose }) {
   const [apps, setApps] = useState([]);
@@ -74,7 +68,10 @@ export function AIChatEngine({ open, onClose }) {
       // Only show the 'generation' field if present, otherwise fallback
       setMessages((prev) => [
         ...prev,
-        { text: data.generation || data.response || JSON.stringify(data), type: "received" },
+        {
+          text: data.generation || data.response || JSON.stringify(data),
+          type: "received",
+        },
       ]);
     } catch (e) {
       setMessages((prev) => [
@@ -196,84 +193,33 @@ export function AIChatEngine({ open, onClose }) {
             flexDirection: "column",
           }}
         >
-          <List sx={{ flex: 1, overflowY: "auto" }}>
-            {messages.map((msg, idx) => (
-              <ListItem
-                key={idx}
-                alignItems={msg.type === "sent" ? "flex-end" : "flex-start"}
-                disableGutters
-                sx={{ mb: 1 }}
-              >
-                <Stack
-                  direction={msg.type === "sent" ? "row-reverse" : "row"}
-                  alignItems="flex-start"
-                  spacing={2}
-                  sx={{ width: "100%" }}
-                >
-                  <Avatar
-                    sx={{
-                      bgcolor: msg.type === "sent" ? "primary.main" : "secondary.main",
-                      width: 32,
-                      height: 32,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {msg.type === "sent" ? "S" : "A"}
-                  </Avatar>
-                  <Paper
-                    elevation={1}
-                    sx={{
-                      p: 1.5,
-                      maxWidth: "75%",
-                      bgcolor: msg.type === "sent" ? "primary.light" : "grey.100",
-                      color: msg.type === "sent" ? "white" : "text.primary",
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Typography variant="body2">{msg.text}</Typography>
-                  </Paper>
-                </Stack>
-              </ListItem>
-            ))}
-            <div ref={messagesEndRef} />
-            {isLoading && (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-                <CircularProgress size={24} />
-              </Box>
-            )}
-          </List>
+          <ChatMessageList
+            messages={messages.map((msg, idx) => ({ ...msg, index: idx }))}
+            messagesEndRef={messagesEndRef}
+          />
+          {isLoading && (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+              <CircularProgress size={24} />
+            </Box>
+          )}
         </Paper>
-        <Box
-          component="form"
+        <ChatInput
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
           onSubmit={(e) => {
             e.preventDefault();
             handleSend();
           }}
-          sx={{ display: "flex", gap: 2 }}
-        >
-          <TextField
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Mesajınızı yazın..."
-            fullWidth
-            size="small"
-            variant="outlined"
-            disabled={isLoading || !selectedApp}
-            multiline
-            maxRows={3}
-            onKeyDown={handleKeyDown}
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            endIcon={<SendIcon />}
-            disabled={!inputValue.trim() || isLoading || !selectedApp}
-            sx={{ minWidth: 120 }}
-          >
-            Gönder
-          </Button>
-        </Box>
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+          loading={isLoading}
+          disabled={!selectedApp}
+          placeholder="Mesajınızı yazın..."
+        />
       </DialogContent>
     </Dialog>
   );
